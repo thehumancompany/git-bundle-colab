@@ -38,11 +38,13 @@ ramdisk_size = "6G" # @param {"type":"string","placeholder":"ramdisk-size"}
 from os import environ as env
 
 env["_repo_uri"] = repo_uri
+env["_repo_name"] = repo_name
 env["_repo_branch"] = repo_branch
 env["_ramdisk_path"] = ramdisk_path
 env["_ramdisk_size"] = ramdisk_size
 
 _git_bundle = """
+#!/usr/bin/env bash
 
 _global_variables() {
   repo_uri=""
@@ -59,13 +61,14 @@ _requirements() {
       "git")"
   if [[ "${_git}" == "" ]]; then
     rm \
-      /var/lib/dpkg/lock-frontend || \
+      "/var/lib/dpkg/lock-frontend" || \
     true
     killall \
-      dpkg || \
-      true
+      "dpkg" || \
+    true
     dpkg \
-      --configure -a || \
+      --configure \
+      -a || \
     true
     apt-get \
       install \
@@ -84,12 +87,14 @@ _requirements() {
     cd \
       ".."
   fi
-fi
+}
 
 _ramdisk_set() {
   local \
     _path="${1}" \
     _size="${2}"
+  echo \
+    "Ramdisk at path: '${_path}'"
   if [[ ! -e "${_path}" ]]; then
     mkdir \
       -p \
@@ -98,7 +103,7 @@ _ramdisk_set() {
       -t \
         "tmpfs" \
       -o \
-        "size=${_size}"
+        "size=${_size}" \
       "${_path}"
   fi
 }
@@ -106,13 +111,19 @@ _ramdisk_set() {
 _git_clone() {
   local \
     _uri="${1}" \
-    _branch="${2}" \
-    _path="${3}" \
+    _path="${2}" \
+    _branch="${3}" \
     _git_opts=()
+  echo \
+    "Init repo at path '${_path}'."
   _git_opts+=(
     -C
       "${_path}"
   )
+  rm \
+    -rf \
+    "${_path}" ||
+  true
   git \
     init \
     "${_path}"
@@ -131,11 +142,6 @@ _git_clone() {
     "${_git_opts[@]}" \
     "checkout" \
       "master"
-  # git \
-  #   "${_git_opts[@]}" \
-  #   "bundle" \
-  #     "create" \
-  #     "master"
 }
 
 _git_bundle() {
@@ -144,54 +150,87 @@ _git_bundle() {
     _repo_name="${2}" \
     _repo_branch="${3}" \
     _ramdisk_path="${4}" \
-    _ramdisk_size="${5}"
+    _ramdisk_size="${5}" \
+    _git_opts=()
   _ramdisk_set \
     "${_ramdisk_path}" \
     "${_ramdisk_size}"
   _git_clone \
     "${_repo_uri}" \
-    "${PWD}/ramdisk/${_repo_name}"
+    "${_ramdisk_path}/${_repo_name}" \
+    "${_repo_branch}"
   mv \
-    "${PWD}/ramdisk/${_repo_name}" \
+    "${_ramdisk_path}/${_repo_name}" \
     "${PWD}"
+  _git_opts=(
+    -C
+      "${_repo_name}"
+  )
+  git \
+    "${_git_opts[@]}" \
+    bundle \
+      create \
+      "${_ramdisk_path}/${_repo_name}.bundle"
+      "master"
   mv \
-    
+    "${_ramdisk_path}/${_repo_name}.bundle" \
+    "${PWD}"
 }
 
 _set_overrides() {
-  if [[ ! -v "override_ramdisk_size" ]]; then
-    _ramdisk_size="6G"
+  if [[ "${ramdisk_size}" == "" ]]; then
+    ramdisk_size="6G"
   fi
 }
 
+_show_config() {
+  local \
+    _text=()
+  _text+=(
+    "          URI: ${repo_uri}"
+    "         Name: ${repo_name}"
+    "       Branch: ${repo_branch}" 
+    "      Ramdisk: ${ramdisk_path}"
+    " Ramdisk size: ${ramdisk_size}"
+  )
+  printf \
+    "%s\n" \
+    "${_text[@]}"
+}
+
+_global_variables
 _requirements
 
-_repo_uri="${1}"
-_repo_name="${2}"
-_repo_branch="${3}"
-_ramdisk_path="${4}"
-_ramdisk_size="${5}"
+repo_uri="${1}"
+repo_name="${2}"
+repo_branch="${3}"
+ramdisk_path="${4}"
+ramdisk_size="${5}"
 
 _app_opts=(
-  "${_repo_uri}"
-  "${_repo_name}"
-  "${_repo_branch}"
-  "${_ramdisk_path}"
-  "${_ramdisk_size}"
+  "${repo_uri}"
+  "${repo_name}"
+  "${repo_branch}"
+  "${ramdisk_path}"
+  "${ramdisk_size}"
 )
 
+_show_config
 _git_bundle \
   "${_app_opts[@]}"
 """
 
-_f = open(
+!rm "/usr/bin/git-bundle-colab" || true
+
+_git_bundle_file = open(
        "/usr/bin/git-bundle-colab",
         "w")
-_f.write(
+_git_bundle_file.write(
   _git_bundle)
+_git_bundle_file.close()
 
-!chmod 755 "/usr/bin/git-bundle"
-!git-bundle "${_repo_uri}" "${_repo_name}" "${_repo_branch}" "${_ramdisk_path}" "${_ramdisk_size}"
+!chmod 755 "/usr/bin/git-bundle-colab"
+!git-bundle-colab "${_repo_uri}" "${_repo_name}" "${_repo_branch}" "${_ramdisk_path}" "${_ramdisk_size}"
 
 # @markdown ### Source availability
 
