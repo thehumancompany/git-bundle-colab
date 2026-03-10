@@ -93,9 +93,18 @@ _ramdisk_set() {
   local \
     _path="${1}" \
     _size="${2}"
+  _path="$(
+    realpath \
+      "${_path}")"
   echo \
     "Ramdisk at path: '${_path}'"
-  if [[ ! -e "${_path}" ]]; then
+  _mounted="$(
+    mount |
+      grep \
+        "${_ramdisk_path}" || \
+    true)"
+  if [[ ! -e "${_path}" || \
+        "${_mounted}" == "" ]]; then
     mkdir \
       -p \
       "${_path}"
@@ -104,6 +113,7 @@ _ramdisk_set() {
         "tmpfs" \
       -o \
         "size=${_size}" \
+      "none" \
       "${_path}"
   fi
 }
