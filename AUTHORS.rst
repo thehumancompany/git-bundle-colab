@@ -22,7 +22,7 @@
 
 
 =====================================
-Untrunc Colab Authors
+Git Bundle Colab Authors
 =====================================
 
 * Pellegrino Prevete <pellegrinoprevete@gmail.com>

@@ -19,15 +19,16 @@
 [comment]: <> (License along with this program.)
 [comment]: <> (If not, see <https://www.gnu.org/licenses/>.)
 
-# Untrunc Colab
+# Git Bundle Colab
 
-Use untrunc from a Google Colab instance.
+Creates a git bundle file for a git repository
+on a Google Colab instance.
 
 You can run the program at this repo
-from colab through the following
+from Gogole Colab through the following
 url
 
-https://colab.research.google.com/github/themartiancompany/untrunc-colab/blob/hurr/untrunc-colab/untrunc-colab.ipynb
+https://colab.research.google.com/github/themartiancompany/git-bundle-colab/blob/master/git-bundle-colab/git-bundle-colab.ipynb
 
 # Source availability
 
@@ -52,8 +53,8 @@ ur \
 
 A censorable HTTP Github mirror of the recipe published there,
 is hosted on
-[untrunc-colab-ur](
-  https://github.com/themartiancompany/untrunc-colab-ur).
+[git-bundle-colab-ur](
+  https://github.com/themartiancompany/git-bundle-colab-ur).
 
 Be aware the mirror could go offline any time as Github and more
 in general all HTTP resources are inherently unstable and censorable.
